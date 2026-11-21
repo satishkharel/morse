@@ -1,6 +1,6 @@
 // Service worker: keeps a copy of the app on the phone so it works offline.
 // Change CACHE whenever any file changes, so phones pick up the new version.
-const CACHE = 'nhmt-0.3-1';
+const CACHE = 'nhmt-0.3-2';
 const FILES = [
   './', './index.html', './style.css', './morse.js', './app.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'
