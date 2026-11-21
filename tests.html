@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nepal Ham Morse Tutor - self-tests</title>
+<style>body{font-family:system-ui,sans-serif;margin:16px} .ok{color:#080} .bad{color:#c00;font-weight:bold} pre{margin:0}</style>
+</head>
+<body>
+<h1>Self-tests</h1>
+<div id="summary"></div>
+<div id="out"></div>
+<script src="morse.js"></script>
+<script>
+'use strict';
+const results = [];
+function check(name, ok, detail) { results.push({ name, ok: !!ok, detail: detail === undefined ? '' : String(detail) }); }
+const near = (a, b, tol) => Math.abs(a - b) <= tol;
+
+// Timing
+let t = Morse.timing(15, 15);
+check('15 WPM dot is 80 ms', near(t.dot, 0.08, 1e-9), t.dot);
+check('No Farnsworth: char gap 3 dots', near(t.charGap, 0.24, 1e-9), t.charGap);
+t = Morse.timing(15, 5);
+const ta = (60 * 15 - 37.2 * 5) / (5 * 15);
+check('Farnsworth char gap (ARRL)', near(t.charGap, 3 * ta / 19, 1e-9), t.charGap);
+check('Farnsworth word gap (ARRL)', near(t.wordGap, 7 * ta / 19, 1e-9), t.wordGap);
+// "PARIS " at 15/5 should take 60/5 = 12 s
+const paris = Morse.totalSeconds(Morse.segments('PARIS', 15, 5)) + t.wordGap;
+check('PARIS + word gap = 12 s at 5 WPM effective', near(paris, 12, 1e-6), paris.toFixed(4));
+const paris20 = Morse.totalSeconds(Morse.segments('PARIS', 20, 20)) + Morse.timing(20, 20).wordGap;
+check('PARIS + word gap = 3 s at 20 WPM', near(paris20, 3, 1e-6), paris20.toFixed(4));
+
+// Table and text
+check('41 Koch characters', Content.KOCH_ORDER.length === 41, Content.KOCH_ORDER.length);
+check('Every Koch character has a code', [...Content.KOCH_ORDER].every(c => Morse.codeFor(c)));
+check('Normalize', Morse.normalize('  cq de   9n1aa! ') === 'CQ DE 9N1AA', Morse.normalize('  cq de   9n1aa! '));
+check('Code display K', Morse.codeDisplay('k') === '▬ • ▬', Morse.codeDisplay('k'));
+check('Lesson 1 = KM', Content.lessonChars(1) === 'KM');
+check('Lesson 40 = all', Content.lessonChars(40) === Content.KOCH_ORDER);
+check('Max lesson 40', Content.MAX_LESSON === 40);
+
+// Koch groups
+const kg = Content.kochGroups(3, 10, 5);
+check('Koch groups: 10 groups of 5', kg.split(' ').length === 10 && kg.split(' ').every(g => g.length === 5), kg);
+check('Koch groups use lesson letters only', [...kg.replace(/ /g, '')].every(c => 'KMUR'.includes(c)), kg);
+
+// Drill
+let three = false, seen = new Set(), p1 = '', p2 = '';
+for (let i = 0; i < 5000; i++) {
+  const c = Content.drillPick('KMURE', p1, p2);
+  if (c === p1 && c === p2) three = true;
+  seen.add(c); p2 = p1; p1 = c;
+}
+check('Drill never repeats a letter 3 times', !three);
+check('Drill uses all lesson letters', seen.size === 5, [...seen].join(''));
+
+// Callsigns, words, QSO
+const calls = Content.callsigns(50).split(' ');
+check('Callsigns contain a number', calls.every(c => /\d/.test(c)), calls.slice(0, 5).join(' '));
+check('Nepal callsign format', /^9N[1-7][A-Z]{2,3}$/.test(Content.randomNepalCall()));
+check('All exam words have five letters', Content.FIVE_LETTER_WORDS.every(w => /^[A-Z]{5}$/.test(w)));
+check('Exam word list has no duplicates', new Set(Content.FIVE_LETTER_WORDS).size === Content.FIVE_LETTER_WORDS.length, Content.FIVE_LETTER_WORDS.length);
+let qsoOk = true; for (let i = 0; i < 100; i++) if (Morse.normalize(Content.qso()).length < 10) qsoOk = false;
+check('QSO lines are sendable', qsoOk);
+
+// Ministry exam
+const ex = Content.ministryExam(15, 15, 5, 10);
+const items = ex.split(' ');
+const exSecs = Morse.totalSeconds(Morse.segments(ex, 15, 5));
+check('Exam has 10 callsigns', items.filter(w => /\d/.test(w)).length === 10, items.filter(w => /\d/.test(w)).join(' '));
+check('Exam words are five letters', items.filter(w => !/\d/.test(w)).every(w => w.length === 5));
+check('Exam lasts 15 minutes (within one word)', exSecs >= 900 && exSecs < 900 + 15, exSecs.toFixed(1) + ' s');
+const words = items.filter(w => !/\d/.test(w));
+check('No word repeats in an exam', new Set(words).size === words.length, words.length + ' words');
+const ex3 = Content.ministryExam(3, 15, 5, 10);
+const ex3Secs = Morse.totalSeconds(Morse.segments(ex3, 15, 5));
+check('3-minute exam has the right length', ex3Secs >= 180 && ex3Secs < 195, ex3Secs.toFixed(1) + ' s');
+
+// Answer sheet
+const sheet = Content.answerSheet('ABCDE FGHIJ KLMNO PQRST UVWXY 9N1AA', 5).split('\n').filter(Boolean);
+check('Answer sheet: 2 lines', sheet.length === 2, JSON.stringify(sheet));
+check('Answer sheet line 1 numbered', sheet[0].startsWith('1.  ABCDE'), sheet[0]);
+check('Answer sheet line 2', sheet[1] === '2.  9N1AA', sheet[1]);
+
+// Scoring
+check('Levenshtein', Scoring.levenshtein('KITTEN', 'SITTING') === 3);
+let r = Scoring.score('KMKMM MMKKM', 'kmkmm mmkkm');
+check('Perfect copy = 100%', r.accuracy === 1, r.accuracy);
+r = Scoring.score('KMKMM MMKKM', 'KMKM MMKKM');
+check('One missed letter of 11 characters (space counts) = 10/11', near(r.accuracy, 10 / 11, 1e-9), r.accuracy);
+check('Missed letter counted', r.missed.M >= 1, JSON.stringify(r.missed));
+r = Scoring.score('ABCDE', '');
+check('Empty copy = 0%', r.accuracy === 0);
+
+// Sending decoder: key "PARIS PARIS" perfectly at 15 WPM with Farnsworth gaps
+function keyText(text, charWpm, effWpm, jitter) {
+  const d = new SendDecoder(charWpm, effWpm);
+  let now = 1;
+  for (const s of Morse.segments(text, charWpm, effWpm)) {
+    const len = s.s * (1 + (jitter ? (Math.random() - 0.5) * jitter : 0));
+    if (s.tone) { d.keyDown(now); now += len; d.keyUp(now); }
+    else { for (let x = 0; x < len; x += 0.02) d.tick(now + x); now += len; }
+  }
+  d.tick(now + 5);
+  return d;
+}
+let dec = keyText('PARIS PARIS', 15, 5, 0);
+check('Decoder reads perfect sending', dec.finishedText() === 'PARIS PARIS', dec.finishedText());
+let st = dec.analyze();
+check('Decoder speed about 15 WPM', near(st.wpm, 15, 0.5), st.wpm.toFixed(2));
+check('Decoder dah ratio 3', near(st.dahRatio, 3, 0.05), st.dahRatio.toFixed(2));
+dec = keyText('CQ DE 9N1AA K', 12, 12, 0.2);
+check('Decoder copes with uneven sending', dec.finishedText() === 'CQ DE 9N1AA K', dec.finishedText());
+dec = keyText('TEST', 25, 25, 0);
+check('Decoder adapts to faster sending', dec.finishedText() === 'TEST', dec.finishedText());
+const d2 = new SendDecoder(15, 15); d2.keyDown(1); d2.keyUp(1.005);
+check('Very short touch ignored', d2.finishedText() === '', d2.finishedText());
+
+// Report
+const failed = results.filter(x => !x.ok);
+document.getElementById('summary').innerHTML = failed.length
+  ? `<p class="bad">${failed.length} of ${results.length} checks FAILED</p>`
+  : `<p class="ok">All ${results.length} checks passed</p>`;
+document.getElementById('out').innerHTML = results.map(x =>
+  `<pre class="${x.ok ? 'ok' : 'bad'}">${x.ok ? 'PASS' : 'FAIL'}  ${x.name}${x.detail ? '   [' + x.detail.replace(/</g, '&lt;') + ']' : ''}</pre>`).join('');
+window.selfTest = { passed: results.length - failed.length, failed: failed.length, failures: failed };
+</script>
+</body>
+</html>
