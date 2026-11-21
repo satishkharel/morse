@@ -23,6 +23,8 @@ const settings = loadSettings();
 function saveSettings() { try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch (e) { /* private mode */ } }
 
 const $ = id => document.getElementById(id);
+// Inside the Android APK, the app provides window.AndroidApp for sharing, saving and so on.
+const androidApp = (window.AndroidApp && typeof window.AndroidApp.isAndroidApp === 'function') ? window.AndroidApp : null;
 const nepali = () => settings.lang === 'ne';
 const S = (en, ne) => (nepali() ? ne : en);
 const fmt = (s, ...a) => s.replace(/\{(\d+)\}/g, (_, i) => a[i]);
@@ -55,6 +57,7 @@ function audio() {
 const amplitude = () => Math.max(0, Math.min(1, settings.volume / 100)) * 0.6;
 
 async function keepScreenOn(on) {
+  if (androidApp) { androidApp.keepScreenOn(!!on); return; }
   try {
     if (on && !wakeLock && 'wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
@@ -129,7 +132,8 @@ function beep() {
     g.gain.linearRampToValueAtTime(0, t + 0.27);
     o.start(t); o.stop(t + 0.3);
   } catch (e) { /* no sound */ }
-  if (navigator.vibrate) navigator.vibrate(200);
+  if (androidApp) androidApp.vibrate(200);
+  else if (navigator.vibrate) navigator.vibrate(200);
 }
 
 function sidetoneKey(down) {
@@ -531,10 +535,12 @@ function onShowAnswer() {
 
 function saveSheet() {
   const text = examSheetText().replace(/\n/g, '\r\n');
+  const d = new Date(), p2 = n => String(n).padStart(2, '0');
+  const fileName = `mock-exam-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.txt`;
+  if (androidApp) { androidApp.saveText(fileName, text); return; }
   const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
-  const d = new Date(), p2 = n => String(n).padStart(2, '0');
-  a.download = `mock-exam-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.txt`;
+  a.download = fileName;
   a.href = URL.createObjectURL(blob);
   document.body.appendChild(a);
   a.click();
@@ -544,6 +550,7 @@ function saveSheet() {
 
 async function shareSheet() {
   const text = examSheetText();
+  if (androidApp) { androidApp.share(S('Answer sheet', 'उत्तरपत्र'), text); return; }
   try {
     if (navigator.share) await navigator.share({ title: S('Answer sheet', 'उत्तरपत्र'), text });
     else { await navigator.clipboard.writeText(text); setStatus(S('Copied.', 'कपी भयो।')); }
@@ -551,6 +558,7 @@ async function shareSheet() {
 }
 
 async function copySheet() {
+  if (androidApp) { androidApp.copy(examSheetText()); setStatus(S('Answer sheet copied.', 'उत्तरपत्र कपी भयो।')); return; }
   try { await navigator.clipboard.writeText(examSheetText()); setStatus(S('Answer sheet copied.', 'उत्तरपत्र कपी भयो।')); }
   catch (e) { setStatus(S('Could not copy.', 'कपी गर्न सकिएन।')); }
 }
@@ -771,7 +779,7 @@ function wire() {
   $('btnSheetSave').addEventListener('click', saveSheet);
   $('btnSheetShare').addEventListener('click', shareSheet);
   $('btnSheetCopy').addEventListener('click', copySheet);
-  if (!navigator.share) $('btnSheetShare').hidden = true;
+  if (!navigator.share && !androidApp) $('btnSheetShare').hidden = true;
 
   // The Morse key: touch, mouse or pen. Capturing the pointer means a finger that
   // slides off the pad still lifts the key.
