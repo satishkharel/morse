@@ -9,7 +9,8 @@ A free Morse code (CW) trainer for new amateur radio operators, in Nepali and En
 
 | | |
 |---|---|
-| 📱 **Android, iPhone, ट्याबलेट / tablet** | **https://satishkharel.github.io/morse/** — Chrome मा खोलेर ⋮ → **Install app** / **Add to Home screen**। त्यसपछि इन्टरनेट बिना पनि चल्छ। · Open in Chrome, then ⋮ → **Install app**. Works offline afterwards. |
+| 🤖 **Android (APK)** | **[NepalHamMorseTutor-0.3.apk](https://github.com/satishkharel/morse/releases/latest/download/NepalHamMorseTutor-0.3.apk)** — फोनमै डाउनलोड गरेर खोल्नुहोस्। "Install unknown apps" सोधेमा Chrome लाई **Allow** गर्नुहोस्, अनि **Install**। इन्टरनेट बिना चल्छ। · Download on the phone and open it. If asked, allow Chrome to "install unknown apps", then tap **Install**. Works offline. |
+| 📱 **iPhone, वा इन्स्टल नगरी / or without installing** | **https://satishkharel.github.io/morse/** — Chrome/Safari मा खोलेर **Install app** / **Add to Home Screen**। · Open in Chrome or Safari, then **Install app** / **Add to Home Screen**. |
 | 💻 **Windows 10 / 11** | **[NepalHamMorseTutor-0.3-Windows.zip](https://github.com/satishkharel/morse/releases/latest/download/NepalHamMorseTutor-0.3-Windows.zip)** — Extract All → **Install.cmd**। Windows ले "protected your PC" भने **More info → Run anyway**। · Extract All, then run **Install.cmd**. If Windows says "protected your PC", click **More info → Run anyway**. |
 
 सबै संस्करण: [Releases](https://github.com/satishkharel/morse/releases) · All versions: [Releases](https://github.com/satishkharel/morse/releases)
