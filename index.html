@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nepal Ham Morse Tutor</title>
+<meta name="description" content="Free Morse code (CW) trainer for new amateur radio operators in Nepal. By 9N1AA.">
+<meta name="theme-color" content="#16407a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1 id="appTitle">नेपाल ह्याम मोर्स ट्युटर</h1>
+  <div class="head-buttons">
+    <button id="btnLang" class="small" type="button">English</button>
+    <button id="btnAbout" class="small" type="button">यसको बारेमा</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <label for="mode" id="lblMode">विधि</label>
+    <select id="mode"></select>
+
+    <div id="lessonRow">
+      <div class="row">
+        <span id="lblLesson" class="lbl">कोच पाठ</span>
+        <div class="stepper">
+          <button id="lessonDown" type="button" aria-label="previous lesson">−</button>
+          <output id="lessonNum">1</output>
+          <button id="lessonUp" type="button" aria-label="next lesson">+</button>
+        </div>
+        <button id="btnNewChar" type="button" class="secondary">नयाँ अक्षर सुन्नुहोस्</button>
+      </div>
+      <div id="lessonInfo" class="info"></div>
+    </div>
+
+    <div id="examRow">
+      <div class="row">
+        <label id="lblExamMinutes" for="examMinutes">अवधि (मिनेट)</label>
+        <input id="examMinutes" type="number" min="1" max="60" inputmode="numeric">
+        <label id="lblPassMark" for="passMark">उत्तीर्णांक (%)</label>
+        <input id="passMark" type="number" min="10" max="100" inputmode="numeric">
+      </div>
+      <button id="btnExamPreset" type="button" class="secondary wide">नेपाल परीक्षाको ढाँचा (15/5 WPM, 15 मिनेट)</button>
+      <div id="examNote" class="info"></div>
+    </div>
+
+    <div id="countRow" class="row">
+      <label id="lblGroups" for="groups">समूह</label>
+      <input id="groups" type="number" min="1" max="100" inputmode="numeric">
+      <label id="lblGroupSize" for="groupSize">प्रति समूह अक्षर</label>
+      <input id="groupSize" type="number" min="1" max="10" inputmode="numeric">
+    </div>
+
+    <details id="soundPanel">
+      <summary id="lblSound">आवाज र गति</summary>
+      <div class="grid2">
+        <label id="lblCharWpm" for="charWpm">अक्षर गति (WPM)</label>
+        <input id="charWpm" type="number" min="5" max="40" inputmode="numeric">
+        <label id="lblEffWpm" for="effWpm">प्रभावकारी गति (WPM, फार्न्सवर्थ)</label>
+        <input id="effWpm" type="number" min="2" max="40" inputmode="numeric">
+        <label id="lblTone" for="toneHz">टोनको पिच (Hz)</label>
+        <input id="toneHz" type="number" min="300" max="1200" step="10" inputmode="numeric">
+        <label id="lblVolume" for="volume">भोल्युम</label>
+        <input id="volume" type="range" min="5" max="100">
+      </div>
+      <p id="soundNote" class="info"></p>
+    </details>
+  </section>
+
+  <!-- Letter drill -->
+  <section id="drillPanel" class="card">
+    <div id="drillResult" class="drill-result"></div>
+    <div id="drillButtons" class="drill-buttons"></div>
+  </section>
+
+  <!-- Copying (receive) practice -->
+  <section id="copyPanel" class="card">
+    <label id="inputHint" for="copyInput"></label>
+    <textarea id="copyInput" rows="4" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  </section>
+
+  <!-- Sending practice -->
+  <section id="sendPanel" class="card">
+    <div class="send-line"><span id="lblSendTarget" class="lbl">पठाउनुहोस्:</span> <span id="sendTarget" class="mono"></span></div>
+    <div class="send-line"><span id="lblSendYou" class="lbl">तपाईं:</span> <span id="sendYou" class="mono"></span></div>
+    <div id="keyPad" class="key-pad" role="button" aria-label="Morse key"><span id="keyPadText">बटन (KEY)</span></div>
+  </section>
+
+  <section id="controls" class="controls">
+    <button id="btnStart" type="button" class="primary">सुरु</button>
+    <button id="btnStop" type="button">रोक</button>
+    <button id="btnReplay" type="button">फेरि सुन</button>
+    <button id="btnCheck" type="button">जाँच</button>
+    <button id="btnShow" type="button">उत्तर हेर</button>
+  </section>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+  <pre id="result" class="result"></pre>
+</main>
+
+<dialog id="sheetDialog">
+  <h2 id="sheetTitle">उत्तरपत्र</h2>
+  <pre id="sheetText" class="sheet"></pre>
+  <div class="dialog-buttons">
+    <button id="btnSheetShare" type="button">Share</button>
+    <button id="btnSheetSave" type="button">Save</button>
+    <button id="btnSheetCopy" type="button">Copy</button>
+    <button id="btnSheetClose" type="button" class="primary">Close</button>
+  </div>
+</dialog>
+
+<dialog id="aboutDialog">
+  <div id="aboutText" class="about"></div>
+  <div class="dialog-buttons">
+    <button id="btnAboutClose" type="button" class="primary">OK</button>
+  </div>
+</dialog>
+
+<dialog id="askDialog">
+  <p id="askText"></p>
+  <div class="dialog-buttons">
+    <button id="btnAskNo" type="button">No</button>
+    <button id="btnAskYes" type="button" class="primary">Yes</button>
+  </div>
+</dialog>
+
+<script src="morse.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
